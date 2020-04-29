@@ -1,39 +1,43 @@
-const User = require("./user");
-const Profile = require("./profile");
-const Post = require("./post");
-const Tags = require("./tags");
+"use strict";
 
-// 1 to 1 with profile
-User.hasOne(Profile, {
-  foreignKey: "profile",
-  as: "profile",
-  onDelete: "CASCADE",
-  onUpdate: "RESTRICT",
-});
-Profile.belongsTo(User);
+const fs = require("fs");
+const path = require("path");
+const { Sequelize } = require("sequelize");
+const basename = path.basename(__filename);
+const env = process.env.NODE_ENV || "development";
+const config = require(__dirname + "/../config/config.json")[env];
+const db = {};
 
-// 1 to many with post
-User.hasMany(Post, {
-  foreignKey: "created_by",
-  as: "posts",
-  onDelete: "SET NULL",
-  onUpdate: "RESTRICT",
-});
-Post.belongsTo(User);
+let sequelize;
+if (config.use_env_variable) {
+  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+} else {
+  sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    config
+  );
+}
 
-// many to many association
-Post.belongsToMany(Tags, {
-  through: "post_tags",
-  timestamps: false,
-});
-Tags.belongsToMany(Post, {
-  through: "post_tags",
-  timestamps: false,
+fs.readdirSync(__dirname)
+  .filter((file) => {
+    return (
+      file.indexOf(".") !== 0 && file !== basename && file.slice(-3) === ".js"
+    );
+  })
+  .forEach((file) => {
+    const model = sequelize["import"](path.join(__dirname, file));
+    db[model.name] = model;
+  });
+
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
 });
 
-module.exports = {
-  User,
-  Profile,
-  Post,
-  Tags,
-};
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;

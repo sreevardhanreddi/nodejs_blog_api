@@ -1,38 +1,42 @@
-const Sequelize = require("sequelize");
-const sequelize = require("./../database");
-
-const Post = sequelize.define(
-  "post",
-  {
-    id: {
-      allowNull: false,
-      autoIncrement: true,
-      primaryKey: true,
-      type: Sequelize.INTEGER,
+"use strict";
+module.exports = (sequelize, DataTypes) => {
+  const post = sequelize.define(
+    "post",
+    {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER,
+      },
+      title: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      content: {
+        type: DataTypes.TEXT,
+        required: true,
+      },
+      cover_pic: { type: DataTypes.STRING },
     },
-    title: {
-      type: Sequelize.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    content: {
-      type: Sequelize.TEXT,
-      required: true,
-    },
-    cover_pic: { type: Sequelize.STRING },
-  },
-  { underscored: true, tableName: "posts" }
-);
+    { underscored: true, tableName: "posts" }
+  );
+  post.associate = function (models) {
+    // associations can be defined here
 
-Post.associate = function (models) {
-  // associations can be defined here
-  Post.belongsTo(models.user);
+    post.belongsTo(models.user, {
+      foreignKey: "created_by",
+      as: "user",
+      onDelete: "SET NULL",
+      onUpdate: "RESTRICT",
+    });
 
-  // many to many association
-  Post.belongsToMany(models.tags, {
-    through: "post_tags",
-    timestamps: false,
-  });
+    // many to many association
+    post.belongsToMany(models.tags, {
+      through: "post_tags",
+      timestamps: false,
+    });
+  };
+  return post;
 };
-
-module.exports = Post;

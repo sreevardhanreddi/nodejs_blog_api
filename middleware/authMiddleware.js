@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const db = require("./../database/models");
-const User = db.User;
+const User = db.user;
 
 const secret = process.env.SERVER_SECRET || "serversecret";
 
@@ -18,7 +18,7 @@ const authenticateToken = async (req, res, next) => {
 
     const data = jwt.verify(token, secret);
     const user = await User.findOne({ where: { email: data.email } });
-    req.user = user.email;
+    req.user = user;
     next();
   } catch (err) {
     console.log(err);

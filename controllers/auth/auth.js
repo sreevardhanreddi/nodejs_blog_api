@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const db = require("./../../database/models");
-const User = db.User;
+const User = db.user;
 
 const secret = process.env.SERVER_SECRET || "serversecret";
 
@@ -16,8 +16,6 @@ exports.signUp = async (req, res, next) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ where: { email } });
-    console.log(req.body);
-    console.log(user);
     if (user) {
       res.status(400);
       return res.json({ message: "Email is taken" });
@@ -30,7 +28,8 @@ exports.signUp = async (req, res, next) => {
     const data = await User.create(userData);
     res.status(201);
     res.json({ message: "created user", data });
-  } catch (error) {
+  } catch (err) {
+    console.log(err);
     return res.status(500).end();
   }
 };
@@ -53,13 +52,14 @@ exports.login = async (req, res, next) => {
         res.status(200);
         return res.json({ token });
       } else {
-        res.status(200);
+        res.status(400);
         return res.json({ message: "Invalid username or password" });
       }
     }
     res.json(400);
     return res.json({ message: "Invalid username or password" });
-  } catch (error) {
+  } catch (err) {
+    console.log(err);
     res.json(500).end();
   }
 };

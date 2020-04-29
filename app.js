@@ -4,8 +4,26 @@ const bodyParser = require("body-parser");
 const logger = require("morgan");
 const cors = require("cors");
 const path = require("path");
-const db = require("./database/database");
+
+const db = require("./database/models/");
 const app = express();
+
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
+const swaggerOptions = {
+  swaggerDefinition: {
+    info: {
+      title: "blog api",
+      description: "node blog api",
+      contact: { name: "sreevardhanreddi@gmail.com" },
+    },
+  },
+  apis: ["./routes/*.js"],
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -21,7 +39,7 @@ app.use("/blogs/", blogRoutes);
 
 const PORT = process.env.PORT || 8080;
 
-db.sync({ force: false }).then(() => {
+db.sequelize.sync({ force: false }).then(() => {
   app.listen(PORT, () => {
     console.log(`listening on ${PORT} ...`);
   });
