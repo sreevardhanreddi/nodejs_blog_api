@@ -10,8 +10,9 @@ exports.createBlogPost = async (req, res, next) => {
     res.status(422);
     return res.json({ error: true, errors });
   }
+  const { title, content, tags } = req.body;
   try {
-    const post = await Post.findOne({ where: { title: req.body.title } });
+    const post = await Post.findOne({ where: { title: title } });
     if (post) {
       res.status(400);
       return res.json({
@@ -29,10 +30,34 @@ exports.createBlogPost = async (req, res, next) => {
       title: req.body.title,
       content: req.body.content,
       created_by: req.user.id,
+      cover_pic: req.file ? req.file.path : null,
     };
-    const data = await Post.create(postObj);
+    const post = await Post.create(postObj);
+    const { tags } = req.body;
+    if (tags) {
+      const tagsList = tags.split(",").map((tag) => {
+        return { tag: tag.trim(), slug: tag.trim() };
+      });
+      if (tagsList) {
+        const tagObjs = await Promise.all(
+          tagsList.map(
+            // find or create return two values, instance(:db) and created (:bool)
+            async (tag) => {
+              const [instance, created] = await Tags.findOrCreate({
+                where: { ...tag },
+              });
+              return instance;
+            }
+          )
+        );
+
+        // assign multiple tags to post
+        await post.setTags(tagObjs);
+      }
+    }
+
     res.status(201);
-    res.json({ message: "created post" });
+    res.json({ message: "created post", post });
   } catch (err) {
     console.log(err);
     return res.status(500).end();
@@ -47,6 +72,11 @@ exports.getBlogs = async (req, res, next) => {
           model: User,
           as: "user",
           attributes: ["id", "email"],
+        },
+        {
+          model: Tags,
+          as: "tags",
+          through: { attributes: [] },
         },
       ],
     });
@@ -70,6 +100,11 @@ exports.getBlogById = async (req, res, next) => {
           model: User,
           as: "user",
           attributes: { exclude: ["password"] },
+        },
+        {
+          model: Tags,
+          as: "tags",
+          through: { attributes: [] },
         },
       ],
     });

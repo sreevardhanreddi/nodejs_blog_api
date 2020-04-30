@@ -28,8 +28,9 @@ app.use("/api-docs/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join((__dirname, "public"))));
 app.use(logger("combined"));
+
+app.use(express.static(path.join((__dirname, "media"))));
 
 const authRoutes = require("./routes/auth");
 const blogRoutes = require("./routes/blog");
