@@ -1,4 +1,5 @@
 const { validationResult } = require("express-validator");
+const { Op } = require("sequelize");
 const db = require("./../../database/models/");
 const Post = db.post;
 const User = db.user;
@@ -66,8 +67,29 @@ exports.createBlogPost = async (req, res, next) => {
 };
 
 exports.getBlogs = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(422);
+    return res.json({ error: true, ...errors });
+  }
   try {
+    let page = req.query.page || 1;
+    if (page <= 0) {
+      page = 1;
+    }
+    let perPage = req.query.per_page || 10;
+    let offset = (page - 1) * perPage;
+    let title = req.query.title || "";
+
     const posts = await Post.findAll({
+      limit: perPage,
+      offset: offset,
+      order: [["id", "ASC"]],
+      where: {
+        title: {
+          [Op.iLike]: `%${title}%`,
+        },
+      },
       include: [
         {
           model: User,
@@ -81,8 +103,10 @@ exports.getBlogs = async (req, res, next) => {
         },
       ],
     });
+    const postsCount = await Post.count();
     res.status(200);
     res.json({
+      count: postsCount,
       posts,
     });
   } catch (err) {
@@ -126,7 +150,7 @@ exports.getBlogById = async (req, res, next) => {
 exports.updateBlogById = async (req, res, next) => {
   try {
     const { postId } = req.params;
-    const post = await Post.findOne({
+    let post = await Post.findOne({
       where: { id: postId },
     });
     if (!post) {
@@ -139,7 +163,7 @@ exports.updateBlogById = async (req, res, next) => {
         title: req.body.title,
         content: req.body.content,
       };
-      await post.update(postObj);
+      post = await post.update(postObj);
       res.status(200);
       res.json({
         post,
@@ -155,6 +179,9 @@ exports.deletePostById = async (req, res, next) => {
   try {
     const { postId } = req.params;
     const post = await Post.findOne({ where: { id: postId } });
+    if (!post) {
+      return res.status(404).end();
+    }
     if (post.created_by != req.user.id) {
       return res.status(403).end();
     }
