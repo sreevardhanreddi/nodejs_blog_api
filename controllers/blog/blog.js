@@ -8,10 +8,11 @@ exports.createBlogPost = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(422);
-    return res.json({ error: true, errors });
+    return res.json({ error: true, ...errors });
   }
-  const { title, content, tags } = req.body;
+
   try {
+    const { title } = req.body;
     const post = await Post.findOne({ where: { title: title } });
     if (post) {
       res.status(400);
@@ -41,7 +42,7 @@ exports.createBlogPost = async (req, res, next) => {
       if (tagsList) {
         const tagObjs = await Promise.all(
           tagsList.map(
-            // find or create return two values, instance(:db) and created (:bool)
+            // find or create returns two values, instance(:db) and created (:bool)
             async (tag) => {
               const [instance, created] = await Tags.findOrCreate({
                 where: { ...tag },

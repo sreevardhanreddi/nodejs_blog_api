@@ -4,6 +4,9 @@ const bodyParser = require("body-parser");
 const logger = require("morgan");
 const cors = require("cors");
 const path = require("path");
+const multer = require("multer");
+
+const uploadFiles = multer({});
 
 const db = require("./database/models/");
 const app = express();
@@ -28,6 +31,7 @@ app.use("/api-docs/", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(uploadFiles.any());
 app.use(logger("combined"));
 
 app.use(express.static(path.join((__dirname, "media"))));
